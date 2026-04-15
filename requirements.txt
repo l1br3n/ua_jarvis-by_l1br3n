@@ -1,0 +1,7 @@
+pyttsx3
+spotipy
+pygame
+vosk
+pyaudio
+keyboard
+pyperclip

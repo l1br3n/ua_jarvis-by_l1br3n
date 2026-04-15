@@ -1,0 +1,14 @@
+{
+  "spotify": {
+    "client_id": "ТВІЙ_SPOTIFY_CLIENT_ID",
+    "client_secret": "ТВІЙ_SPOTIFY_CLIENT_SECRET",
+    "redirect_uri": "силку яку введеш при налаштуванні Spotify API"
+  },
+  
+  "apps": {
+    "програма(назва на англійській)": "C:\\Шлях\\До\\Назва.exe"
+  },
+  "processes": {
+    "програма(назва на англійській)": "НазваПроцесу.exe"
+  }
+}

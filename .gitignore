@@ -1,0 +1,13 @@
+
+config.json
+user_data.json
+
+
+model/
+
+
+__pycache__/
+*.pyc
+.env
+
+.cache
