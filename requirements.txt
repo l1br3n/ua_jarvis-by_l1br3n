@@ -5,3 +5,5 @@ vosk
 pyaudio
 keyboard
 pyperclip
+google-genai
+edge-tts

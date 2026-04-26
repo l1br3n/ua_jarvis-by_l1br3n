@@ -7,6 +7,13 @@ import spotipy
 import pygame
 import time
 import random
+import subprocess
+import webbrowser
+import edge_tts
+import asyncio
+import tempfile
+import re
+import os
 from spotipy.oauth2 import SpotifyOAuth
 
 # ==========================================
@@ -78,6 +85,11 @@ def respond_to_greeting():
     chosen_sound, chosen_text = random.choice(responses)
     play_voice(chosen_sound, chosen_text)
 
+def dady_home():
+    responses = [("dady_here.mp3", "З поверненням, сер."), ("dady_home.mp3", "Вітаю дома, сер.")]
+    chosen_sound, chosen_text = random.choice(responses)
+    play_voice(chosen_sound, chosen_text)
+
 def respond_to_greeting2():
     responses = [("yeah.mp3", "Так, сер."), ("what_need.mp3", "Що потрібно зробити?")]
     chosen_sound, chosen_text = random.choice(responses)
@@ -92,6 +104,10 @@ def respond_to_thanks():
     chosen_sound, chosen_text = random.choice(responses)
     play_voice(chosen_sound, chosen_text)
 
+def respond_to_chzh():
+    responses = [("ya_che.mp3", "Я че ебу?."), ("da_ti.mp3", "Да ты че, базару нет")]
+    chosen_sound, chosen_text = random.choice(responses)
+    play_voice(chosen_sound, chosen_text)
 
 # ==========================================
 # ЗАКРТИ ПОТОЧНЕ ВІКНО
@@ -193,22 +209,94 @@ def play_custom_playlist(playlist_key):
         return
 
     if playlist_key == "random":
-        # Вибираємо випадковий ключ зі словника
         playlist_key = random.choice(list(SPOTIFY_PLAYLISTS.keys()))
         voice_file, backup_text = "have_luck.mp3", "Запускаю випадковий плейлист, сер."
     else:
         if playlist_key not in SPOTIFY_PLAYLISTS:
             speak(f"Плейлиста {playlist_key} немає в базі, сер.")
             return
-        
-        # Словник для підбору правильної озвучки під конкретний плейлист
+        #В залежності від ключа вибираємо відповідний звук та текст для озвучки
         voice_map = {
             "чіл": ("spot_chill.mp3", "Запускаю chill музику, сер."),
             "щасливий": ("open.mp3", "Відкриваю, сер."),
-            "робота": ("spot_tony.mp3", "Запускаю робочу музику, сер.")
+            "робота": ("spot_tony.mp3", "Запускаю робочу музику, сер."),
+            "крутий": ("spot_cool.mp3", "Запускаю круту музику, сер.")
         }
-        # Якщо ключа немає в voice_map, беремо стандартну озвучку
         voice_file, backup_text = voice_map.get(playlist_key, ("open.mp3", f"Запускаю плейлист, сер."))
 
     playlist_uri = SPOTIFY_PLAYLISTS[playlist_key]
     play_playlist_logic(playlist_uri, voice_file, backup_text)
+
+
+def open_website(url):
+    play_voice("open.mp3", "Відкриваю, сер.")
+    os.system(f'start "" "{url}"')
+
+
+def open_project(project_name):
+    projects = CONFIG.get("projects", {})
+    
+    if project_name in projects:
+        path = projects[project_name]
+        play_voice("open.mp3", f"Відкриваю проект {project_name}, сер.")
+        
+        try:
+            subprocess.Popen(['code', path], shell=True)
+            print(f"-> [Система]: Проект відкрито за шляхом {path}")
+        except Exception as e:
+            print(f"[Помилка]: Не вдалося відкрити проект. Деталі: {e}")
+            play_voice("error.mp3", "Виникла помилка при відкритті проекту, сер.")
+    else:
+        play_voice("error.mp3", "Я не знайшов такого проекту в базі, сер.")
+
+
+
+#==========================================
+# Налаштування голосу
+#==========================================
+VOICE = "uk-UA-OstapNeural" # Чоловічий голос
+SPEED = "+9%"               # Швидкість (+/-)
+PITCH = "+1Hz"              # Висота голосу (зробимо трохи нижчим для солідності)
+#==========================================
+
+
+def speak_neural(text):
+    """Якісна озвучка чоловічим голосом із налаштуваннями"""
+    if not text:
+        return
+
+    # Очищуємо текст від технічних символів Gemini (зірочки, решітки)
+    clean_text = re.sub(r'[*#_`-]', '', text)
+    print(f"[Джарвіс]: {clean_text}")
+
+    async def _generate():
+        communicate = edge_tts.Communicate(
+            text=clean_text, 
+            voice=VOICE,
+            rate=SPEED,
+            pitch=PITCH
+        )
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
+            tmp_path = tmp_file.name
+        
+        try:
+            await communicate.save(tmp_path)
+            
+            # Відтворення через твій pygame
+            pygame.mixer.music.load(tmp_path)
+            pygame.mixer.music.play()
+            
+            while pygame.mixer.music.get_busy():
+                time.sleep(0.1)
+                
+            pygame.mixer.music.unload()
+        finally:
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except:
+                    pass
+
+    # Запускаємо асинхронну функцію в звичайному коді
+    asyncio.run(_generate())

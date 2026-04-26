@@ -3,6 +3,10 @@ import pyaudio
 import os
 from vosk import Model, KaldiRecognizer
 from brain import process_command 
+import actions_static
+import random
+import time
+from actions_static import speak, play_voice
 
 MODEL_PATH = "model"
 
@@ -23,25 +27,66 @@ stream = p.open(format=pyaudio.paInt16,
 stream.start_stream()
 
 print("\n========================================")
-print("[Джарвіс]: Асистент активний. Готовий слухати.")
+print("[Джарвіс]: Режим очікування (WWD). Скажіть 'Джарвіс', щоб активувати.")
 print("========================================\n")
 
+is_awake = False
+WAKE_WORDS = ["джарвіс", "чарльз", "через"]
+ACTIVE_TIMEOUT = 45  # Секунди безперервного слухання
+activation_time = None  # Час активації 
+
+def is_wake_word_spoken(text):
+    for wake_word in WAKE_WORDS:
+        if wake_word in text:
+            return True
+    return False
+
+def is_active_session_valid():
+    """Перевіряє чи ще тривает активна сесія (45 секунд)"""
+    global activation_time
+    if activation_time is None:
+        return False
+    elapsed = time.time() - activation_time
+    return elapsed < ACTIVE_TIMEOUT
+
 def process_voice_command(recognized_text):
-    text = recognized_text.strip()
+    global is_awake, activation_time
+    text = recognized_text.strip().lower()
     if not text:
         return
 
-    for name in ["джарвіс", "чарльз", "через"]:
-        if text.startswith(name):
-            text = text.replace(name, "", 1).strip()
-            break
+    # Режим очікування (WWD) - чекаємо на слово активації
+    if not is_awake:
+        if is_wake_word_spoken(text):
+            is_awake = True
+            activation_time = time.time()
+            print("\n[Джарвіс]: Системи активовано. Слухаю команди...")
+            responses = [("online.mp3", "Системи онлайн, чекаю вказівок."), ("yeah.mp3", "Так точно."), ("what_need.mp3", "Що потрібно зробити?")]
+            chosen_sound, chosen_text = random.choice(responses)
+            actions_static.play_voice(chosen_sound, chosen_text)
+            rec.Reset()
+        return
 
-    print(f"[Почув]: {text}")
+    # Режим активної сесії - обробляємо команди
+    if is_awake and is_active_session_valid():
+        print(f"[Почув команду]: {text}")
+        stream.stop_stream()
+        
+        command_executed = process_command(text)
+        
+        if not command_executed:
+            print("[Джарвіс]: Команду не розпізнано.")
+        
+        rec.Reset()
+        stream.start_stream()
+        return
     
-    stream.stop_stream()
-    process_command(text)
-    rec.Reset()
-    stream.start_stream()
+    # Сесія закінчилась - повертаємось в режим очікування
+    if is_awake and not is_active_session_valid():
+        is_awake = False
+        activation_time = None
+        print("\n[Джарвіс]: Час активної сесії закінчився. Переходжу в режим очікування...")
+        rec.Reset()
 
 try:
     while True:

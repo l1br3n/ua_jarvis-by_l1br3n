@@ -25,7 +25,8 @@ def process_command(text):
     APP_ALIASES = USER_DATA.get("app_aliases", {})
 
     # 2. ДИНАМІЧНЕ ВІДКРИТТЯ ПРОГРАМ
-    if any(trigger in text for trigger in ["відкр", "запуст", "го "]):
+    trigger_open = ["відкр", "запуст", "го"]
+    if any(any(trig in w for w in words) for trig in trigger_open):
         for alias, app_key in APP_ALIASES.items():
             if alias in text:
                 path = APPS.get(app_key)
@@ -34,7 +35,8 @@ def process_command(text):
                     return True
 
     # 3. ДИНАМІЧНЕ ЗАКРИТТЯ ПРОГРАМ
-    if any(trigger in text for trigger in ["закр", "вируб", "за край", "за кр"]):
+    trigger_close = ["закр", "вируб", "за край", "за кр"]
+    if any(any(trig in w for w in words) for trig in trigger_close):
         for alias, app_key in APP_ALIASES.items():
             if alias in text:
                 process = PROCESSES.get(app_key)
@@ -54,27 +56,51 @@ def process_command(text):
         {"roots": [["включ"]], "action": actions_dynamic.search_youtube_query, "has_text": True},
         {"roots": [["знай", "пісн"]], "action": actions_dynamic.search_playlist_query, "has_text": True},
         {"roots": [["канал"]], "action": actions_dynamic.join_discord_voice, "has_text": True},
-        {"roots": [["надрукуй"], ["напиши", "текст"], ["введи", "текст"]], "action": actions_dynamic.type_dictated_text, "has_text": True},
+        {"roots": [["надрукуй"], ["напиши", "текст"], ["введи", "текст"], ["напиш"], ["надрукуй"]], "action": actions_dynamic.type_dictated_text, "has_text": True},
         
+        {"roots": [["відкрий", "чат"], ["відкрий", "чат"], ["чат"], ["чад"]], "action": lambda: actions_static.open_website(CONFIG["websites"]["чат"])},
         {"roots": [["дякую"], ["спасиб"], ["дяка"]], "action": actions_static.respond_to_thanks},
+        {"roots": [["що", "за", "фіг"], ["фіг"]], "action": actions_static.respond_to_chzh},
         {"roots": [["ти", "тут"], ["тут"]], "action": actions_static.respond_to_greeting},
+        {"roots": [["Тато", "дома"], ["дома"]], "action": actions_static.dady_home},
         {"roots": [["джарвис"], ["джарвіс"], ["привіт"], ["чарльз"], ["через"]], "action": actions_static.respond_to_greeting2},
         {"roots": [["закр", "вікн"], ["закр", "програм"], ["за край", "вікн"]], "action": actions_static.close_active_program},
         {"roots": [["вимкн", "систем"], ["відключ"], ["відбій"]], "action": actions_static.shutdown_jarvis},
         {"roots": [["згорн", "вікн"], ["сховай", "вікн"]], "action": actions_static.minimize_window},
         {"roots": [["встав", "текст"], ["встав"]], "action": actions_static.paste_text},
-
+        {"roots": [["запус", "проект"], ["проект"]], "action": actions_static.open_project, "has_text": True},
         # Плейлисти
         {"roots": [["ранд", "плей"], ["випадк", "плейл"]], "action": actions_static.play_custom_playlist, "playlist_key": "random"},
         {"roots": [["робот", "плейлист"], ["музик", "робот"]], "action": actions_static.play_custom_playlist, "playlist_key": "робота"},
         {"roots": [["чіл", "плейлист"], ["для чіла"], ["чл"] ], "action": actions_static.play_custom_playlist, "playlist_key": "чіл"},
-        {"roots": [["щасл", "плейлист"], ["для щаст"], ["щасл"] ], "action": actions_static.play_custom_playlist, "playlist_key": "щасливий"}
+        {"roots": [["щасл", "плейлист"], ["для щаст"], ["щасл"] ], "action": actions_static.play_custom_playlist, "playlist_key": "щасливий"},
+        {"roots": [["крутий", "плейлист"], ["крутий"]], "action": actions_static.play_custom_playlist, "playlist_key": "крутий"},
+
+        {"roots": [["розка"]], "action": actions_dynamic.ask_jarvis_gemini, "has_text": True}
     ]
 
-    # 5. ВИКОНАННЯ СТАТИЧНИХ КОМАНД
+    # 5. ВИКОНАННЯ СТАТИЧНИХ КОМАНД (Стандартний пошук)
     for rule in COMMAND_RULES:
         for root_combo in rule["roots"]:
-            if all(root in text for root in root_combo):
+            match_all = True
+            
+            for root in root_combo:
+                root_matched = False
+                # Обробка складених коренів, які мають пробіл
+                if " " in root:
+                    if root in text:
+                        root_matched = True
+                else:
+                    for w in words:
+                        if root in w:  # Проста перевірка на входження
+                            root_matched = True
+                            break
+                            
+                if not root_matched:
+                    match_all = False
+                    break
+                    
+            if match_all:
                 if "playlist_key" in rule:                     
                     rule["action"](rule["playlist_key"])         
                 elif rule.get("has_text"):
@@ -82,3 +108,5 @@ def process_command(text):
                 else:
                     rule["action"]() 
                 return True
+                
+    return False
