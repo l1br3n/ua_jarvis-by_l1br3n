@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Jarvis Web Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    
+    <!-- ЛІВЕ БІЧНЕ МЕНЮ -->
+    <div class="sidebar">
+        <div class="logo"> JARVIS</div>
+        <!-- Вкладки тепер тут, вертикально -->
+        <button type="button" class="tablinks active" onclick="openTab(event, 'Main')">Основне</button>
+        <button type="button" class="tablinks" onclick="openTab(event, 'API')">API ключі</button>
+        <button type="button" class="tablinks" onclick="openTab(event, 'Comm')">Комунікація</button>
+        <button type="button" class="tablinks" onclick="openTab(event, 'Other')">Інше</button>
+    </div>
+
+    <!-- ГОЛОВНА ОБЛАСТЬ СПРАВА -->
+    <form class="main-content" method="POST" action="/update">
+        
+        <!-- ВКЛАДКА 1: ОСНОВНЕ -->
+        <div id="Main" class="tabcontent" style="display: block;">
+            <div class="section">
+                <div class="sub-tab">
+                    <button type="button" class="subtablinks active" onclick="openSubTab(event, this, 'Playlists')"> Плейлисти Spotify</button>
+                    <button type="button" class="subtablinks" onclick="openSubTab(event, this, 'Apps')"> Програми та ігри</button>
+                </div>
+
+                <div id="Playlists" class="sub-tabcontent" style="display: block;">
+                    <h3> Збережені плейлисти</h3>
+                    {% for name, data in data_user.get('spotify_playlists', {}).items() %}
+                    <div class="row">
+                        <input type="text" name="playlist_names" class="name-input" value="{{ name }}">
+                        
+                        <input type="text" name="playlist_links" class="path-input" value="{{ data['uri'] if data is mapping else data }}">
+                        <input type="text" name="playlist_voices" class="voice-input" value="{{ data['voice'] if data is mapping else '' }}" placeholder="Озвучка (напр. spot_chill.mp3)">
+                        
+                        <button type="button" class="del-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                    {% endfor %}
+                    
+                    <h3>+ Додати новий</h3>
+                    <div class="row">
+                        <input type="text" name="playlist_names" class="name-input" value="" placeholder="Назва плейлиста...">
+                        <input type="text" name="playlist_links" class="path-input" value="" placeholder="Посилання Spotify...">
+                        <input type="text" name="playlist_voices" class="voice-input" value="" placeholder="Озвучка (необов'язково)">
+                        <button type="button" class="del-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                </div>
+
+                <div id="Apps" class="sub-tabcontent">
+                    <h3> Збережені програми</h3>
+                    {% for app_name, app_path in data_config.get('apps', {}).items() %}
+                    <div class="row">
+                        <input type="text" name="app_names" class="name-input" value="{{ app_name }}">
+                        <input type="text" name="app_paths" class="path-input" value="{{ app_path }}">
+                        <button type="button" class="del-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                    {% endfor %}
+                    
+                    <h3>+ Додати нову</h3>
+                    <div class="row">
+                        <input type="text" name="app_names" class="name-input" value="" placeholder="Назва програми...">
+                        <input type="text" name="app_paths" class="path-input" value="" placeholder="Шлях до .exe...">
+                        <button type="button" class="del-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 2: API -->
+        <div id="API" class="tabcontent">
+            <div class="section">
+                <h2> Google Gemini (user_data.json)</h2>
+                <div class="row">
+                    <span style="width: 200px; color: #9e9e9e;">gemini_api_key:</span>
+                    <input type="text" name="gemini_api_key" class="path-input" value="{{ data_user.get('gemini_api_key', '') }}">
+                </div>
+                <div class="row">
+                    <span style="width: 200px; color: #9e9e9e;">jarvis_system_prompt:</span>
+                    <input type="text" name="jarvis_system_prompt" class="path-input" value="{{ data_user.get('jarvis_system_prompt', '') }}">
+                </div>
+
+                <h2 style="margin-top: 40px;"> Spotify API (config.json)</h2>
+                <div class="row">
+                    <span style="width: 200px; color: #9e9e9e;">client_id:</span>
+                    <input type="text" name="spotify_client_id" class="path-input" value="{{ data_config.get('spotify', {}).get('client_id', '') }}">
+                </div>
+                <div class="row">
+                    <span style="width: 200px; color: #9e9e9e;">client_secret:</span>
+                    <input type="text" name="spotify_client_secret" class="path-input" value="{{ data_config.get('spotify', {}).get('client_secret', '') }}">
+                </div>
+                <div class="row">
+                    <span style="width: 200px; color: #9e9e9e;">redirect_uri:</span>
+                    <input type="text" name="spotify_redirect_uri" class="path-input" value="{{ data_config.get('spotify', {}).get('redirect_uri', '') }}">
+                </div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 3: КОМУНІКАЦІЯ -->
+        <div id="Comm" class="tabcontent">
+            <div class="section">
+                <div class="sub-tab">
+                    <button type="button" class="subtablinks active" onclick="openSubTab(event, this, 'Telegram')"> Telegram</button>
+                    <button type="button" class="subtablinks" onclick="openSubTab(event, this, 'Discord')"> Discord</button>
+                </div>
+
+                <div id="Telegram" class="sub-tabcontent" style="display: block;">
+                    <h3> Збережені контакти</h3>
+                    {% for t_name, t_user in data_user.get('telegram_contacts', {}).items() %}
+                    <div class="row">
+                        <input type="text" name="tg_names" class="name-input" value="{{ t_name }}">
+                        <input type="text" name="tg_users" class="path-input" value="{{ t_user }}">
+                        <button type="button" class="del-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                    {% endfor %}
+                    
+                    <h3>+ Додати контакт</h3>
+                    <div class="row">
+                        <input type="text" name="tg_names" class="name-input" value="" placeholder="Кому...">
+                        <input type="text" name="tg_users" class="path-input" value="" placeholder="Юзернейм (без @)...">
+                        <button type="button" class="del-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                </div>
+
+                <div id="Discord" class="sub-tabcontent">
+                    <h3> Збережені канали</h3>
+                    <div class="hint">Формат: ServerID, ChannelID (через кому)</div>
+                    {% for d_name, d_ids in data_user.get('discord_channels', {}).items() %}
+                    <div class="row">
+                        <input type="text" name="discord_names" class="name-input" value="{{ d_name }}">
+                        <input type="text" name="discord_ids" class="path-input" value="{{ d_ids | join(',') }}">
+                        <button type="button" class="del-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                    {% endfor %}
+                    
+                    <h3>+ Додати канал</h3>
+                    <div class="row">
+                        <input type="text" name="discord_names" class="name-input" value="" placeholder="Новий канал...">
+                        <input type="text" name="discord_ids" class="path-input" value="" placeholder="ServerID, ChannelID">
+                        <button type="button" class="del-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 4: ІНШЕ -->
+        <div id="Other" class="tabcontent">
+            <div class="section">
+                <div class="sub-tab">
+                    <button type="button" class="subtablinks active" onclick="openSubTab(event, this, 'Aliases')"> Еліаси</button>
+                    <button type="button" class="subtablinks" onclick="openSubTab(event, this, 'Projects')"> Проєкти</button>
+                </div>
+
+                <div id="Aliases" class="sub-tabcontent" style="display: block;">
+                    <h3> Збережені еліаси</h3>
+                    {% for a_name, a_target in data_user.get('app_aliases', {}).items() %}
+                    <div class="row">
+                        <input type="text" name="alias_names" class="name-input" value="{{ a_name }}">
+                        <input type="text" name="alias_targets" class="path-input" value="{{ a_target }}">
+                        <button type="button" class="del-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                    {% endfor %}
+                    
+                    <h3>+ Додати новий</h3>
+                    <div class="row">
+                        <input type="text" name="alias_names" class="name-input" value="" placeholder="Синонім...">
+                        <input type="text" name="alias_targets" class="path-input" value="" placeholder="Оригінальна назва...">
+                        <button type="button" class="del-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                </div>
+
+                <div id="Projects" class="sub-tabcontent">
+                    <h3> Збережені проєкти</h3>
+                    {% for p_name, p_path in data_config.get('projects', {}).items() %}
+                    <div class="row">
+                        <input type="text" name="proj_names" class="name-input" value="{{ p_name }}">
+                        <input type="text" name="proj_paths" class="path-input" value="{{ p_path }}">
+                        <button type="button" class="del-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                    {% endfor %}
+                    
+                    <h3> Додати новий</h3>
+                    <div class="row">
+                        <input type="text" name="proj_names" class="name-input" value="" placeholder="Назва проєкту...">
+                        <input type="text" name="proj_paths" class="path-input" value="" placeholder="Шлях до папки...">
+                        <button type="button" class="del-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Кнопка збереження зафіксована справа внизу -->
+        <button type="submit" class="save-btn"> Зберегти всі налаштування</button>
+    </form>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        function openSubTab(evt, btn, subTabName) {
+            var i;
+            var parentTab = btn.closest('.tabcontent');
+            var subcontents = parentTab.getElementsByClassName("sub-tabcontent");
+            for (i = 0; i < subcontents.length; i++) {
+                subcontents[i].style.display = "none";
+            }
+            var sublinks = parentTab.getElementsByClassName("subtablinks");
+            for (i = 0; i < sublinks.length; i++) {
+                sublinks[i].className = sublinks[i].className.replace(" active", "");
+            }
+            document.getElementById(subTabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        function removeRow(btn) {
+            btn.parentElement.remove();
+        }
+    </script>
+</body>
+</html>

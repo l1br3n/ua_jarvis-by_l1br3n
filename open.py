@@ -3,7 +3,7 @@ import os
 
 #Вкажи повний шлях до твого головного файлу
 
-path_to_main = r"D:\JARVIIIIIIS – копія\main.py"
+path_to_main = r"D:\jarvikkkkkkkkkkk\recomposition\main.py"
 
 project_folder = os.path.dirname(path_to_main)
 

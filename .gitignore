@@ -1,18 +1,21 @@
+__pycache__/
+*.py[cod]
+*$py.class
 
 config.json
 user_data.json
 
-
-model/
-
-
-__pycache__/
-*.pyc
+venv/
+env/
 .env
 
-.vscode
+.vscode/
+.idea/
 
-.github\agents
+.DS_Store
+Thumbs.db
 
+.сache/
+logs/
 
-.cache
+resources/model/
