@@ -1,0 +1,172 @@
+/* ОСНОВНІ НАЛАШТУВАННЯ */
+body {
+    background-color: #050a12;
+    background-image: 
+        linear-gradient(rgba(0, 150, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 150, 255, 0.1) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #00d2ff;
+    font-family: 'Orbitron', 'Segoe UI', sans-serif;
+    margin: 0;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden; /* Забороняємо прокрутку самого сайту */
+    position: relative;
+}
+
+/* КОНТЕЙНЕР ІНТЕРФЕЙСУ */
+.jarvis-hud {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* ЗАГАЛЬНИЙ СТИЛЬ ПАНЕЛЕЙ (Glassmorphism + ЗМІНА РОЗМІРУ) */
+.hud-panel {
+    position: absolute; /* Дозволяє плавати і перетягуватись */
+    background: rgba(0, 40, 80, 0.2);
+    border: 1px solid rgba(0, 210, 255, 0.3);
+    border-radius: 4px;
+    padding: 15px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 15px rgba(0, 210, 255, 0.1);
+    
+    resize: both; 
+    /* ФІКС ТЕКСТУ: Ховаємо горизонтальний виліт, дозволяємо вертикальний скрол */
+    overflow-x: hidden;
+    overflow-y: auto; 
+    word-wrap: break-word; /* Дозволяє довгим словам розриватися */
+    
+    min-width: 180px; 
+    min-height: 100px;
+    z-index: 20;
+}
+
+/* ПОЧАТКОВІ ПОЗИЦІЇ ПАНЕЛЕЙ */
+.panel-weather { top: 30px; left: 30px; width: 280px; }
+.panel-media { top: 250px; left: 30px; width: 280px; }
+.panel-history { bottom: 30px; left: 30px; width: 280px; max-height: 250px; }
+.panel-controls { top: 30px; right: 30px; text-align: right; z-index: 20; position: absolute; }
+
+/* СТИЛІЗАЦІЯ СКРОЛБАРУ */
+.hud-panel::-webkit-scrollbar { width: 6px; height: 6px; }
+.hud-panel::-webkit-scrollbar-track { background: rgba(0, 40, 80, 0.1); }
+.hud-panel::-webkit-scrollbar-thumb { background: rgba(0, 210, 255, 0.4); border-radius: 3px; }
+.hud-panel::-webkit-scrollbar-thumb:hover { background: rgba(0, 210, 255, 0.8); }
+
+/* ЗАГОЛОВОК (За нього будемо тягнути) */
+.hud-title {
+    font-size: 0.7em;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 210, 255, 0.3);
+    padding-bottom: 5px;
+    cursor: grab; /* Курсор "рука" для перетягування */
+}
+.hud-title:active { cursor: grabbing; }
+
+/* ФІКС ДЛЯ РЯДКІВ ПОГОДИ */
+.weather-row { 
+    display: flex; 
+    justify-content: space-between; 
+    flex-wrap: wrap; /* Дозволяє тексту падати на новий рядок при стисненні */
+    gap: 5px;
+    margin-bottom: 8px; 
+    font-size: 0.9em; 
+}
+
+/* ІСТОРІЯ ТА МЕДІА */
+.media-btns { display: flex; justify-content: space-around; font-size: 1.5em; margin: 15px 0; flex-wrap: wrap; gap: 10px; }
+.media-ctrls { display: flex; justify-content: center; gap: 20px; color: #fff; cursor: pointer; flex-wrap: wrap; }
+.history-line { font-size: 0.8em; opacity: 0.7; margin: 5px 0; border-left: 2px solid #00d2ff; padding-left: 8px; }
+
+/* КНОПКИ МЕНЮ */
+.ctrl-item { cursor: pointer; margin-bottom: 20px; transition: 0.3s; }
+.ctrl-item:hover { text-shadow: 0 0 10px #00d2ff; color: #fff; }
+
+/* ЦЕНТРАЛЬНА ЧАСТИНА (Жорстко по центру) */
+.center-hud {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.hologram-logo {
+    width: 200px;
+    height: 200px;
+    position: relative;
+    border: 2px solid rgba(0, 210, 255, 0.5);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 30px rgba(0, 210, 255, 0.4), inset 0 0 20px rgba(0, 210, 255, 0.2);
+    animation: pulse 4s infinite alternate;
+}
+.hologram-logo::before {
+    content: '';
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    border: 1px dashed rgba(0, 210, 255, 0.4);
+    border-radius: 50%;
+    animation: rotate 20s linear infinite;
+}
+.logo-inner-text { font-size: 1.2em; font-weight: bold; letter-spacing: 5px; text-shadow: 0 0 10px #00d2ff; }
+
+.input-trigger {
+    margin-top: 40px;
+    background: transparent;
+    border: 1px solid #00d2ff;
+    color: #00d2ff;
+    padding: 10px 40px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
+    transition: 0.3s;
+    
+}
+/* Стилі для прямого вводу команд в HUD */
+#direct-cmd-input {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #4db8ff;
+    color: #4db8ff;
+    padding: 15px 25px;
+    border-radius: 20px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    outline: none;
+    text-align: center;
+    width: 450px;       /* Ширина поля */
+    min-height: 50px;   /* Початкова висота */
+    max-height: 200px;  /* Максимум, далі почнеться скрол всередині */
+    resize: none;       /* Забороняємо тягнути за кутик */
+    overflow: hidden;   /* Ховаємо скролбари */
+    display: block;
+    margin: 0 auto;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 15px rgba(77, 184, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+#direct-cmd-input:focus {
+    box-shadow: 0 0 20px rgba(77, 184, 255, 0.6);
+    background: rgba(0, 0, 0, 0.7);
+    border-color: #82cfff;
+}
+
+#direct-cmd-input::placeholder {
+    color: rgba(77, 184, 255, 0.4);
+}
+.input-trigger:hover { background: rgba(0, 210, 255, 0.1); box-shadow: 0 0 20px rgba(0, 210, 255, 0.5); color: #fff; }
+
+@keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes pulse { from { transform: scale(1); box-shadow: 0 0 20px rgba(0, 210, 255, 0.4); } to { transform: scale(1.05); box-shadow: 0 0 40px rgba(0, 210, 255, 0.7); } }

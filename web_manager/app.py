@@ -1,8 +1,13 @@
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, jsonify
 import json
 import os
+import logging  
 
 app = Flask(__name__)
+
+# Вимикаємо логування
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -92,9 +97,40 @@ def update():
 
     return redirect(url_for('index'))
 
+# ===================================================
+# НОВИЙ КОД: РОУТ ДЛЯ ГОЛОВНОГО ІНТЕРФЕЙСУ JARVIS
+# ===================================================
+@app.route('/jarvis')
+def jarvis_ui():
+    return render_template('jarvis.html')
+# ===================================================
+
+# Зберігаємо історію команд для відображення в HUD
+command_history = []
+
+@app.route('/api/command', methods=['POST'])
+def receive_command():
+    data = request.get_json()
+    command = data.get('command')
+    
+    if command:
+        # Додаємо в історію
+        command_history.append(f"> {command}")
+        
+        # Передаємо команду в main.py через чергу
+        if 'COMMAND_QUEUE' in app.config:
+            app.config['COMMAND_QUEUE'].put(command)
+            
+        return jsonify({"status": "success", "command": command})
+    return jsonify({"status": "error"}), 400
+
+@app.route('/api/history', methods=['GET'])
+def get_history():
+    # Повертаємо останні 5 команд
+    return jsonify(command_history[-5:])
 if __name__ == '__main__':
     print("=====================================================")
     print("🌐 Менеджер Джарвіса запущено!")
-    print("Відкрий посилання у браузері: http://127.0.0.1:5000")
+    print("Відкрий посилання у браузері: http://127.0.0.1:5050") # ТУТ
     print("=====================================================\n")
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5050) # І ТУТ

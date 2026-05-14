@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>JARVIS SYSTEM | HUD</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='jarvis.css') }}">
+</head>
+<body>
+
+    <div class="jarvis-hud">
+        
+        <div class="hud-panel panel-weather" id="panel-1">
+            <div class="hud-title">Різне</div>
+            <div class="weather-row"><span>ДАТА:</span> <span id="current-date">08.05.2026</span></div>
+            <div class="weather-row"><span>ЧАС:</span> <span id="current-time">20:47</span></div>
+            <div class="weather-row"><span>ПОГОДА:</span> <span>-</span></div>
+            <div class="weather-row"><span>ТЕМП:</span> <span>-</span></div>
+        </div>
+
+        <div class="hud-panel panel-media" id="panel-2">
+            <div class="hud-title">Медія</div>
+            <div class="media-btns">
+                <i class="fa-brands fa-spotify" style="color: #1DB954;"></i>
+                <i class="fa-brands fa-youtube" style="color: #FF0000;"></i>
+                <i class="fa-brands fa-twitch" style="color: #9146FF;"></i>
+            </div>
+            <div class="media-ctrls">
+                <i class="fa-solid fa-backward-step"></i>
+                <i class="fa-solid fa-circle-play"></i>
+                <i class="fa-solid fa-forward-step"></i>
+            </div>
+        </div>
+
+        <div class="hud-panel panel-history" id="panel-3">
+            <div class="hud-title">Історія</div>
+            <div class="history-line">&gt; Jarvis, новини сьогодні</div>
+            <div class="history-line">&gt; ввімкни spotify</div>
+            <div class="history-line">&gt; погода у львові</div>
+            <div class="history-line">&gt; відкрий twitch</div>
+        </div>
+
+        <div class="panel-controls">
+    <div class="ctrl-item"><i class="fa-solid fa-bars"></i> МЕНЮ</div>
+    
+    <div class="ctrl-item" onclick="window.open('/', 'JarvisSettings');" style="cursor: pointer;">
+        <i class="fa-solid fa-gear"></i> НАЛАШТУВАННЯ
+    </div>
+</div>
+
+        <div class="center-hud">
+    <div class="hologram-logo" style="cursor: pointer;" onclick="sendCommand('джарвіс')">
+        <div class="logo-inner-text">JARVIS</div>
+    </div>
+    
+    <div class="input-container" style="margin-top: 60px;">
+        <textarea id="direct-cmd-input" placeholder="Введіть команду..." rows="1"></textarea>
+    </div>
+</div>
+
+    </div>
+
+    <script>
+        
+        function makeDraggable(element) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            // Знаходимо заголовок панелі, за який будемо тягнути
+            const dragHandle = element.querySelector('.hud-title');
+
+            if (dragHandle) {
+                dragHandle.onmousedown = dragMouseDown;
+            }
+
+            function dragMouseDown(e) {
+                e.preventDefault();
+                // Отримуємо початкові координати курсора
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+                
+                // Виводимо панель, яку тягнемо, на передній план
+                document.querySelectorAll('.hud-panel').forEach(p => p.style.zIndex = 20);
+                element.style.zIndex = 100;
+            }
+
+            function elementDrag(e) {
+                e.preventDefault();
+                // Вираховуємо нову позицію
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                
+                // Встановлюємо нові координати
+                element.style.top = (element.offsetTop - pos2) + "px";
+                element.style.left = (element.offsetLeft - pos1) + "px";
+                
+                // Скидаємо прив'язку до низу/права, якщо вона була
+                element.style.bottom = "auto";
+                element.style.right = "auto";
+            }
+
+            function closeDragElement() {
+                // Зупиняємо перетягування при відпусканні кнопки миші
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
+        // Запускаємо функцію для всіх панелей
+        document.querySelectorAll('.hud-panel').forEach(panel => {
+            makeDraggable(panel);
+        });
+
+
+function updateDateTime() {
+    const now = new Date();
+
+    // Форматуємо дату (ДД.ММ.РРРР)
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    document.getElementById('current-date').innerText = `${day}.${month}.${year}`;
+
+    // Форматуємо час (ГГ:ХХ:СС)
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('current-time').innerText = `${hours}:${minutes}:${seconds}`;
+}
+
+// Оновлювати кожну секунду
+setInterval(updateDateTime, 1000);
+updateDateTime(); // Викликати одразу при завантаженні
+
+        // Функція для відправки команд на бекенд
+function sendCommand(cmd) {
+    if (!cmd || cmd.trim() === "") return;
+    
+    fetch('/api/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: cmd })
+    })
+    .then(response => response.json())
+    .then(data => console.log("JARVIS отримав:", data));
+}
+
+// 1. Пряме текстове введення через поле (спрацьовує на Enter)
+const cmdInput = document.getElementById('direct-cmd-input');
+
+cmdInput.addEventListener('input', function() {
+    this.style.height = 'auto'; // Скидаємо висоту
+    this.style.height = (this.scrollHeight) + 'px'; // Встановлюємо нову під контент
+});
+
+cmdInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        let cmd = this.value.trim();
+        if (cmd !== "") {
+            sendCommand(cmd);
+            this.value = '';
+            this.style.height = 'auto';
+        }
+    }
+});
+
+// 2. Кнопки управління медіа
+const ctrls = document.querySelectorAll('.media-ctrls i');
+ctrls[0].addEventListener('click', () => sendCommand('попередн')); // Назад
+ctrls[1].addEventListener('click', () => sendCommand('пауз'));     // Плей/Пауза
+ctrls[2].addEventListener('click', () => sendCommand('наступн'));  // Далі
+
+// 3. Кнопки додатків (Media)
+const apps = document.querySelectorAll('.media-btns i');
+apps[0].addEventListener('click', () => sendCommand('відкрий спотіфай')); // Прив'яжи до своїх аліасів
+apps[1].addEventListener('click', () => sendCommand('відкрий ютуб'));
+apps[2].addEventListener('click', () => sendCommand('відкрий твіч'));
+
+// 4. Оновлення панелі історії
+setInterval(() => {
+    fetch('/api/history')
+    .then(res => res.json())
+    .then(data => {
+        const historyPanel = document.getElementById('panel-3');
+        let htmlContent = '<div class="hud-title">Історія</div>';
+        
+        // Виводимо історію з бекенду
+        data.forEach(cmd => {
+            htmlContent += `<div class="history-line">${cmd}</div>`;
+        });
+        
+        // Якщо історія порожня, залишаємо заглушку
+        if(data.length === 0) {
+            htmlContent += '<div class="history-line">&gt; Очікування команд...</div>';
+        }
+        
+        historyPanel.innerHTML = htmlContent;
+        // Оновлюємо перетягування для цієї панелі
+        makeDraggable(historyPanel);
+    })
+    .catch(err => console.log("Помилка історії", err));
+}, 2000); // Оновлюємо кожні 2 секунди
+    </script>
+</body>
+</html>
